@@ -1,17 +1,9 @@
-# ==========================================================================
-#  PEANUT GOOD/BAD  --  MobileNetV2 training (Colab)
-#  Har "# ===== CELL N =====" ko ALAG Colab cell mein paste karo.
-#  Pehle: Runtime -> Change runtime type -> GPU (T4)
-# ==========================================================================
 
-
-# ===== CELL 1 : dataset load karo =========================================
-# dataset_processed.zip ko Google Drive pe daalo, phir mount + unzip.
 
 from google.colab import drive
 drive.mount('/content/drive')
 
-# apne zip ka sahi path do:
+
 !cp "/content/drive/MyDrive/dataset_processed.zip" /content/
 !unzip -q -o /content/dataset_processed.zip -d /content/
 
@@ -22,7 +14,6 @@ n_bad  = len(os.listdir(f"{data_dir}/bad"))
 print("good:", n_good, " bad:", n_bad)
 
 
-# ===== CELL 2 : train / val / test split ==================================
 import tensorflow as tf
 
 IMG = 224
@@ -53,7 +44,7 @@ val_ds   = val_ds.cache().prefetch(AUTOTUNE)
 test_ds  = test_ds.cache().prefetch(AUTOTUNE)
 
 
-# ===== CELL 3 : model banao (MobileNetV2 + head) ==========================
+
 from tensorflow.keras import layers, models
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -84,21 +75,19 @@ model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
 model.summary()
 
 
-# ===== CELL 4 : class_weight (halka imbalance safety) =====================
+
 total = n_good + n_bad
 class_weight = {0: total / (2 * n_bad),    # bad
                 1: total / (2 * n_good)}   # good
 print("class_weight:", class_weight)
 
 
-# ===== CELL 5 : PHASE 1 -- head train (base frozen) =======================
 hist1 = model.fit(train_ds, validation_data=val_ds,
                   epochs=15, class_weight=class_weight)
 
 
-# ===== CELL 6 : PHASE 2 -- fine-tune (base unfreeze, low LR) ===============
 base.trainable = True
-# sabse pehli layers freeze rakho (general features), aakhri fine-tune karo
+
 for layer in base.layers[:100]:
     layer.trainable = False
 
@@ -109,7 +98,6 @@ hist2 = model.fit(train_ds, validation_data=val_ds,
                   epochs=10, class_weight=class_weight)
 
 
-# ===== CELL 7 : EVALUATE (test set -- jo kabhi nahi dekha) ================
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -128,7 +116,6 @@ print("\nReport:")
 print(classification_report(y_true, y_pred, target_names=["bad", "good"]))
 
 
-# ===== CELL 8 : SAVE (version-proof: weights only) ========================
 model.save_weights("/content/peanut.weights.h5")
 !cp /content/peanut.weights.h5 "/content/drive/MyDrive/peanut.weights.h5"
 print("Saved weights to Drive. Download karke laptop pe le lo.")
