@@ -1,0 +1,7 @@
+# AgriNut Vision — Python dependencies
+depthai<3
+opencv-python==4.10.0.84
+numpy<2
+tensorflow
+scikit-learn
+pyserial
